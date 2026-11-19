@@ -1,6 +1,7 @@
 // Contexto de autenticação: guarda o usuário logado e expõe entrar/cadastrar/sair.
 
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Alert } from 'react-native';
 import { DadosCadastro, Usuario } from '../modelos';
 import * as api from '../servicos/api';
 
@@ -32,6 +33,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     api.definirToken(undefined);
     setUsuario(null);
   }, []);
+
+  // Token expirado (API respondeu 401): volta para o Início.
+  useEffect(() => {
+    api.definirAoExpirarSessao(() => {
+      Alert.alert('Sessão expirada', 'Entre de novo para continuar.');
+      sair();
+    });
+    return () => api.definirAoExpirarSessao(undefined);
+  }, [sair]);
 
   // useMemo evita re-renderizar todos os consumidores quando nada mudou.
   const valor = useMemo(() => ({ usuario, entrar, cadastrar, sair }), [usuario, entrar, cadastrar, sair]);

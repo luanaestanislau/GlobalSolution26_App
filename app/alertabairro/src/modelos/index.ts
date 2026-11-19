@@ -23,6 +23,7 @@ export interface Ocorrencia {
   bairro: string;
   fotoUri?: string;
   criadaEm: string; // ISO
+  meu?: boolean; // true se foi o usuário logado que registrou (só ele pode excluir/resolver)
 }
 
 export interface NovaOcorrencia {
@@ -44,7 +45,7 @@ export interface Abrigo {
 }
 
 export type ModoAjuda = 'pedido' | 'oferta';
-export type StatusPedido = 'aguardando' | 'atendido';
+export type StatusPedido = 'aguardando' | 'atendido' | 'resolvido'; // "resolvido" vai para o histórico
 
 export interface PedidoAjuda {
   id: number;
@@ -54,6 +55,18 @@ export interface PedidoAjuda {
   urgencia: 'baixa' | 'media' | 'alta';
   status: StatusPedido;
   distancia: string;
+  meu?: boolean; // true se foi o usuário logado que publicou
+}
+
+export interface ContatoEmergencia {
+  id: number;
+  nome: string;
+  telefone: string;
+}
+
+export interface NovoContato {
+  nome: string;
+  telefone: string;
 }
 
 export interface NovoPedido {

@@ -2,7 +2,7 @@
 
 import React, { useCallback } from 'react';
 import { Alert, Pressable, StyleSheet, Text } from 'react-native';
-import { enviarCheckin } from '../servicos/api';
+import { enviarCheckin, mensagemErro } from '../servicos/api';
 import { obterLocalizacao } from '../servicos/localizacao';
 import { cores } from '../tema';
 
@@ -12,8 +12,8 @@ export default function BotaoSOS() {
       const pos = await obterLocalizacao();
       await enviarCheckin('preciso_de_ajuda', pos);
       Alert.alert('Pedido de ajuda enviado', 'Sua localização foi registrada.');
-    } catch {
-      Alert.alert('Não foi possível enviar', 'Verifique sua conexão e tente de novo.');
+    } catch (e) {
+      Alert.alert('Não foi possível enviar', mensagemErro(e));
     }
   }, []);
 

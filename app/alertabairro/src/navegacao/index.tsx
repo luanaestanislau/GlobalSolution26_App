@@ -10,6 +10,7 @@ import { cores } from '../tema';
 import Abrigos from '../telas/Abrigos';
 import Ajuda from '../telas/Ajuda';
 import Cadastro from '../telas/Cadastro';
+import Contatos from '../telas/Contatos';
 import Detalhe from '../telas/Detalhe';
 import Inicio from '../telas/Inicio';
 import Login from '../telas/Login';
@@ -58,6 +59,7 @@ export default function Navegacao() {
           <Pilha.Screen name="Detalhe" component={Detalhe} options={{ title: 'Detalhe da ocorrência' }} />
           <Pilha.Screen name="NovaOcorrencia" component={NovaOcorrencia} options={{ title: 'Nova ocorrência' }} />
           <Pilha.Screen name="NovoPedido" component={NovoPedido} options={{ title: 'Novo pedido de ajuda' }} />
+          <Pilha.Screen name="Contatos" component={Contatos} options={{ title: 'Contatos de emergência' }} />
         </Pilha.Navigator>
       ) : (
         <Pilha.Navigator>

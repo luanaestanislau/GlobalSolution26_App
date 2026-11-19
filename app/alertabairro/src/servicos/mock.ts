@@ -17,7 +17,7 @@ const espera = (ms = 400) => new Promise<void>((r) => setTimeout(r, ms));
 const minutosAtras = (m: number) => new Date(Date.now() - m * 60000).toISOString();
 
 let ocorrencias: Ocorrencia[] = [
-  { id: 1, tipo: 'Alagamento', descricao: 'Rua alagada, água na altura do joelho.', latitude: -23.5489, longitude: -46.6388, status: 'aberta', prioridade: 'critica', relatos: 4, bairro: 'Centro', criadaEm: minutosAtras(20) },
+  { id: 1, tipo: 'Alagamento', descricao: 'Rua alagada, água na altura do joelho.', latitude: -23.5489, longitude: -46.6388, status: 'aberta', prioridade: 'critica', relatos: 4, bairro: 'Centro', criadaEm: minutosAtras(20), meu: true },
   { id: 2, tipo: 'Árvore caída', descricao: 'Árvore bloqueando a faixa da direita.', latitude: -23.5532, longitude: -46.6301, status: 'em_atendimento', prioridade: 'alta', relatos: 2, bairro: 'Centro', criadaEm: minutosAtras(95) },
   { id: 3, tipo: 'Sem luz', descricao: 'Poste apagado na esquina.', latitude: -23.5461, longitude: -46.6352, status: 'resolvida', prioridade: 'normal', relatos: 1, bairro: 'Centro', criadaEm: minutosAtras(600) },
 ];
@@ -29,16 +29,18 @@ const abrigos: Abrigo[] = [
 ];
 
 let pedidos: PedidoAjuda[] = [
-  { id: 1, modo: 'pedido', categoria: 'Remédio', descricao: 'Preciso buscar um remédio para minha mãe idosa.', urgencia: 'alta', status: 'aguardando', distancia: '300 m' },
+  { id: 1, modo: 'pedido', categoria: 'Remédio', descricao: 'Preciso buscar um remédio para minha mãe idosa.', urgencia: 'alta', status: 'aguardando', distancia: '300 m', meu: true },
   { id: 2, modo: 'pedido', categoria: 'Transporte', descricao: 'Transporte até o abrigo para uma família.', urgencia: 'media', status: 'atendido', distancia: '500 m' },
-  { id: 3, modo: 'oferta', categoria: 'Abrigo', descricao: 'Tenho dois quartos livres para receber vizinhos.', urgencia: 'baixa', status: 'aguardando', distancia: '700 m' },
+  { id: 3, modo: 'oferta', categoria: 'Abrigo', descricao: 'Tenho dois quartos livres para receber vizinhos.', urgencia: 'baixa', status: 'aguardando', distancia: '700 m', meu: true },
+  { id: 4, modo: 'pedido', categoria: 'Abrigo', descricao: 'Precisei de um lugar seco para passar a noite.', urgencia: 'alta', status: 'resolvido', distancia: '0 m', meu: true },
 ];
-
 let proximoId = 100;
 
 export async function login(email: string, _senha: string): Promise<RespostaLogin> {
   await espera();
-  const usuario: Usuario = { id: 1, nome: 'Maria Souza', email, bairro: 'Centro', perfil: 'morador' };
+  // Para demonstrar as ações de voluntário: use um e-mail que contenha "voluntario".
+  const perfil: Usuario['perfil'] = email.toLowerCase().includes('voluntario') ? 'voluntario' : 'morador';
+  const usuario: Usuario = { id: 1, nome: 'Maria Souza', email, bairro: 'Centro', perfil };
   return { token: 'token-falso', usuario };
 }
 
@@ -63,6 +65,7 @@ export async function criarOcorrencia(nova: NovaOcorrencia): Promise<Ocorrencia>
     relatos: 1,
     bairro: 'Centro',
     criadaEm: new Date().toISOString(),
+    meu: true,
   };
   ocorrencias = [o, ...ocorrencias];
   return o;
@@ -93,11 +96,54 @@ export async function listarPedidos(): Promise<PedidoAjuda[]> {
 
 export async function criarPedido(novo: NovoPedido): Promise<PedidoAjuda> {
   await espera();
-  const p: PedidoAjuda = { id: proximoId++, ...novo, status: 'aguardando', distancia: '0 m' };
+  const p: PedidoAjuda = { id: proximoId++, ...novo, status: 'aguardando', distancia: '0 m', meu: true };
   pedidos = [p, ...pedidos];
   return p;
 }
 
 export async function enviarCheckin(status: 'estou_bem' | 'preciso_de_ajuda', _pos?: Coordenada): Promise<void> {
   await espera(200);
+}
+
+// ---- Excluir e resolver ----
+
+export async function excluirOcorrencia(id: number): Promise<void> {
+  await espera(200);
+  ocorrencias = ocorrencias.filter((o) => o.id !== id);
+}
+
+export async function resolverOcorrencia(id: number): Promise<Ocorrencia> {
+  await espera(200);
+  ocorrencias = ocorrencias.map((o) => (o.id === id ? { ...o, status: 'resolvida' as const } : o));
+  return ocorrencias.find((o) => o.id === id)!;
+}
+
+export async function excluirPedido(id: number): Promise<void> {
+  await espera(200);
+  pedidos = pedidos.filter((p) => p.id !== id);
+}
+
+// Marca como resolvido: o pedido sai das listas ativas e aparece no histórico.
+export async function resolverPedido(id: number): Promise<PedidoAjuda> {
+  await espera(200);
+  pedidos = pedidos.map((p) => (p.id === id ? { ...p, status: 'resolvido' as const } : p));
+  return pedidos.find((p) => p.id === id)!;
+}
+
+// ---- Ações de voluntário ----
+
+export async function atenderOcorrencia(id: number): Promise<Ocorrencia> {
+  await espera(200);
+  ocorrencias = ocorrencias.map((o) => (o.id === id ? { ...o, status: 'em_atendimento' as const } : o));
+  return ocorrencias.find((o) => o.id === id)!;
+}
+
+// quantidade > 0 = entrada de pessoas; < 0 = saída. Recusa passar da capacidade (como a procedure).
+export async function controlarVagas(id: number, quantidade: number): Promise<Abrigo> {
+  await espera(200);
+  const a = abrigos.find((x) => x.id === id)!;
+  const novo = a.vagasOcupadas + quantidade;
+  if (novo > a.capacidade) throw new Error('Abrigo sem vagas suficientes');
+  a.vagasOcupadas = Math.max(0, novo);
+  return { ...a };
 }

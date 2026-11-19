@@ -7,7 +7,8 @@ import Botao from '../componentes/Botao';
 import Campo from '../componentes/Campo';
 import Chip from '../componentes/Chip';
 import { ModoAjuda, NovoPedido as NovoPedidoDados } from '../modelos';
-import { criarPedido } from '../servicos/api';
+import { criarPedido, mensagemErro } from '../servicos/api';
+import { obterLocalizacao } from '../servicos/localizacao';
 import { cores, espaco, fonte } from '../tema';
 
 const CATEGORIAS = ['Remédio', 'Transporte', 'Abrigo', 'Outros'];
@@ -34,11 +35,13 @@ export default function NovoPedido() {
     setErro('');
     setEnviando(true);
     try {
-      await criarPedido({ modo, categoria, descricao: descricao.trim(), urgencia });
+      // A posição vai junto para a API calcular a distância (ela não devolve a localização de ninguém).
+      const pos = await obterLocalizacao();
+      await criarPedido({ modo, categoria, descricao: descricao.trim(), urgencia }, pos);
       Alert.alert('Publicado', modo === 'pedido' ? 'Seu pedido foi publicado.' : 'Sua oferta foi publicada.');
       nav.goBack();
-    } catch {
-      Alert.alert('Não foi possível publicar', 'Tente de novo.');
+    } catch (e) {
+      Alert.alert('Não foi possível publicar', mensagemErro(e));
     } finally {
       setEnviando(false);
     }

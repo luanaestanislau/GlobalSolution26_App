@@ -8,12 +8,21 @@ import Botao from '../componentes/Botao';
 import Cartao from '../componentes/Cartao';
 import Etiqueta from '../componentes/Etiqueta';
 import { Ocorrencia } from '../modelos';
-import { confirmarOcorrencia, listarOcorrencias } from '../servicos/api';
+import { useAuth } from '../contexto/AuthContext';
+import {
+  atenderOcorrencia,
+  confirmarOcorrencia,
+  excluirOcorrencia,
+  listarOcorrencias,
+  mensagemErro,
+  resolverOcorrencia,
+} from '../servicos/api';
 import { cores, espaco, fonte } from '../tema';
 import { tempoDecorrido } from '../utils/geo';
 
 export default function Detalhe() {
   const nav = useNavigation<any>();
+  const { usuario } = useAuth();
   const { id } = useRoute<any>().params as { id: number };
   const [o, setO] = useState<Ocorrencia | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -31,11 +40,51 @@ export default function Detalhe() {
     try {
       setO(await confirmarOcorrencia(id));
       Alert.alert('Obrigado!', 'Seu relato foi somado a esta ocorrência.');
-    } catch {
-      Alert.alert('Não foi possível confirmar', 'Tente de novo.');
+    } catch (e) {
+      Alert.alert('Não foi possível confirmar', mensagemErro(e));
     } finally {
       setEnviando(false);
     }
+  }
+
+  // Atender e resolver são ações de voluntário (a API responde 403 para os outros perfis).
+  function mudarStatus(acao: 'atender' | 'resolver') {
+    const resolver = acao === 'resolver';
+    Alert.alert(
+      resolver ? 'Marcar como resolvida?' : 'Assumir o atendimento?',
+      resolver ? 'A ocorrência continuará no mapa como resolvida.' : 'A ocorrência passa para "em atendimento".',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: resolver ? 'Resolvida' : 'Assumir',
+          onPress: async () => {
+            try {
+              setO(await (resolver ? resolverOcorrencia(id) : atenderOcorrencia(id)));
+            } catch (e) {
+              Alert.alert('Não foi possível atualizar', mensagemErro(e));
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  function excluir() {
+    Alert.alert('Excluir ocorrência?', 'Use se houve algum erro ou engano. Não dá para desfazer.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Excluir',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await excluirOcorrencia(id);
+            nav.goBack();
+          } catch (e) {
+            Alert.alert('Não foi possível excluir', mensagemErro(e));
+          }
+        },
+      },
+    ]);
   }
 
   if (!o) return <ActivityIndicator style={{ marginTop: espaco.xl }} color={cores.primaria} />;
@@ -78,6 +127,21 @@ export default function Detalhe() {
 
       <Botao titulo="Também vejo isso aqui" onPress={confirmar} carregando={enviando} />
       <Botao titulo="Ver abrigo próximo" variante="secundario" onPress={() => nav.navigate('Tabs', { screen: 'Abrigos' })} estilo={{ marginTop: espaco.sm }} />
+
+      {usuario?.perfil === 'voluntario' && o.status !== 'resolvida' && (
+        <View style={{ marginTop: espaco.lg }}>
+          <Text style={styles.sub}>Ações de voluntário</Text>
+          {o.status === 'aberta' && (
+            <Botao titulo="Assumir atendimento" variante="secundario" icone="hand-left-outline" onPress={() => mudarStatus('atender')} estilo={{ marginTop: espaco.sm }} />
+          )}
+          <Botao titulo="Marcar como resolvida" variante="sucesso" icone="checkmark-circle" onPress={() => mudarStatus('resolver')} estilo={{ marginTop: espaco.sm }} />
+        </View>
+      )}
+
+      {/* Excluir: aparece só quando a API informar que o item é do usuário ("meu"). */}
+      {o.meu && (
+        <Botao titulo="Excluir ocorrência" variante="secundario" icone="trash-outline" onPress={excluir} estilo={{ marginTop: espaco.lg }} />
+      )}
     </ScrollView>
   );
 }

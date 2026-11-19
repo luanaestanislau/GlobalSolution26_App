@@ -8,12 +8,20 @@ import Botao from '../componentes/Botao';
 import Cartao from '../componentes/Cartao';
 import Etiqueta from '../componentes/Etiqueta';
 import { Abrigo } from '../modelos';
-import { abrigoMaisProximo, listarAbrigos } from '../servicos/api';
+import { useAuth } from '../contexto/AuthContext';
+import { abrigoMaisProximo, controlarVagas, listarAbrigos, mensagemErro } from '../servicos/api';
 import { obterLocalizacao } from '../servicos/localizacao';
 import { cores, espaco, fonte } from '../tema';
 import { COORDENADA_PADRAO, Coordenada, distanciaKm, formatarDistancia } from '../utils/geo';
 
-const ItemAbrigo = React.memo(function ItemAbrigo({ a, pos }: { a: Abrigo; pos: Coordenada }) {
+interface ItemProps {
+  a: Abrigo;
+  pos: Coordenada;
+  voluntario: boolean;
+  aoMudarVagas: (id: number, quantidade: number) => void;
+}
+
+const ItemAbrigo = React.memo(function ItemAbrigo({ a, pos, voluntario, aoMudarVagas }: ItemProps) {
   const vagas = a.capacidade - a.vagasOcupadas;
   return (
     <Cartao>
@@ -23,11 +31,20 @@ const ItemAbrigo = React.memo(function ItemAbrigo({ a, pos }: { a: Abrigo; pos: 
       <View style={{ marginTop: espaco.xs }}>
         {vagas > 0 ? <Etiqueta texto={`${vagas} vagas`} tom="sucesso" /> : <Etiqueta texto="Lotado" tom="perigo" />}
       </View>
+
+      {/* Só voluntários controlam as vagas (a API responde 403 para os outros perfis). */}
+      {voluntario && (
+        <View style={styles.vagas}>
+          <Botao titulo="Entrou 1" icone="add" variante="secundario" onPress={() => aoMudarVagas(a.id, 1)} estilo={styles.botaoVaga} />
+          <Botao titulo="Saiu 1" icone="remove" variante="secundario" onPress={() => aoMudarVagas(a.id, -1)} estilo={styles.botaoVaga} />
+        </View>
+      )}
     </Cartao>
   );
 });
 
 export default function Abrigos() {
+  const { usuario } = useAuth();
   const [lista, setLista] = useState<Abrigo[]>([]);
   const [pos, setPos] = useState<Coordenada>(COORDENADA_PADRAO);
   const [destino, setDestino] = useState<Abrigo | null>(null);
@@ -44,10 +61,24 @@ export default function Abrigos() {
       setPos(p);
       setDestino(await abrigoMaisProximo(p));
       setCarregando(false);
-    })().catch(() => ativo && setCarregando(false));
+    })().catch((e) => {
+      if (!ativo) return;
+      setCarregando(false);
+      Alert.alert('Não foi possível carregar os abrigos', mensagemErro(e));
+    });
     return () => {
       ativo = false;
     };
+  }, []);
+
+  // Voluntário registra entrada (+1) ou saída (-1); a procedure recusa passar da capacidade.
+  const mudarVagas = useCallback(async (id: number, quantidade: number) => {
+    try {
+      const atualizado = await controlarVagas(id, quantidade);
+      setLista((l) => l.map((a) => (a.id === id ? atualizado : a)));
+    } catch (e) {
+      Alert.alert('Não foi possível atualizar as vagas', mensagemErro(e));
+    }
   }, []);
 
   const tracarRota = useCallback(() => {
@@ -74,7 +105,9 @@ export default function Abrigos() {
         <FlatList
           data={lista}
           keyExtractor={(a) => String(a.id)}
-          renderItem={({ item }) => <ItemAbrigo a={item} pos={pos} />}
+          renderItem={({ item }) => (
+            <ItemAbrigo a={item} pos={pos} voluntario={usuario?.perfil === 'voluntario'} aoMudarVagas={mudarVagas} />
+          )}
           contentContainerStyle={{ padding: espaco.md, paddingBottom: 90 }}
           ListHeaderComponent={
             <Cartao estilo={{ backgroundColor: cores.primariaClara, borderColor: cores.primaria }}>
@@ -97,4 +130,6 @@ const styles = StyleSheet.create({
   mapa: { height: 220 },
   itemTitulo: { fontSize: fonte.normal, fontWeight: '600', color: cores.texto },
   sub: { fontSize: fonte.pequena, color: cores.textoSecundario, marginTop: 2 },
+  vagas: { flexDirection: 'row', marginTop: espaco.sm },
+  botaoVaga: { flex: 1, marginRight: espaco.sm, minHeight: 44 },
 });

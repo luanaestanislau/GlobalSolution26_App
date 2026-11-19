@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import Botao from '../componentes/Botao';
 import Campo from '../componentes/Campo';
 import { useAuth } from '../contexto/AuthContext';
+import { mensagemErro } from '../servicos/api';
 import { cores, espaco, fonte } from '../tema';
 
 export default function Login() {
@@ -27,8 +28,8 @@ export default function Login() {
     try {
       await entrar(email.trim(), senha);
       // A navegação para o app acontece sozinha quando "usuario" é definido.
-    } catch {
-      Alert.alert('Não foi possível entrar', 'Confira seus dados e tente de novo.');
+    } catch (e) {
+      Alert.alert('Não foi possível entrar', mensagemErro(e, 'Confira seus dados e tente de novo.'));
     } finally {
       setCarregando(false);
     }

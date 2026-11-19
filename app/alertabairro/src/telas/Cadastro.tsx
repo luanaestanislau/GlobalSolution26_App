@@ -6,6 +6,7 @@ import Botao from '../componentes/Botao';
 import Campo from '../componentes/Campo';
 import Chip from '../componentes/Chip';
 import { useAuth } from '../contexto/AuthContext';
+import { mensagemErro } from '../servicos/api';
 import { Usuario } from '../modelos';
 import { cores, espaco, fonte } from '../tema';
 
@@ -37,8 +38,8 @@ export default function Cadastro() {
     setCarregando(true);
     try {
       await cadastrar({ nome: nome.trim(), email: email.trim(), bairro: bairro.trim(), senha, perfil });
-    } catch {
-      Alert.alert('Não foi possível criar a conta', 'Tente de novo em instantes.');
+    } catch (e) {
+      Alert.alert('Não foi possível criar a conta', mensagemErro(e));
     } finally {
       setCarregando(false);
     }
@@ -51,7 +52,7 @@ export default function Cadastro() {
         <Campo rotulo="Nome completo" value={nome} onChangeText={setNome} erro={erros.nome} />
         <Campo rotulo="E-mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" erro={erros.email} />
         <Campo rotulo="Bairro" value={bairro} onChangeText={setBairro} erro={erros.bairro} />
-        <Campo rotulo="Senha" value={senha} onChangeText={setSenha} secureTextEntry erro={erros.senha} />
+        <Campo rotulo="Senha" value={senha} onChangeText={setSenha} secureTextEntry maxLength={72} erro={erros.senha} />
         <Text style={styles.rotulo}>Perfil</Text>
         <View style={styles.linha}>
           {PERFIS.map((p) => (

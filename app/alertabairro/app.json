@@ -5,17 +5,18 @@
     "version": "1.0.0",
     "plugins": [
       [
-      "expo-location",
-      {
-        "locationWhenInUsePermission": "O AlertaBairro usa sua localizacao para registrar ocorrencias e achar abrigos."
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O AlertaBairro usa sua localizacao para registrar ocorrencias e achar abrigos."
         }
-    ],
-    [
+      ],
+      [
         "expo-image-picker",
         {
           "cameraPermission": "O AlertaBairro usa a camera para anexar fotos as ocorrencias."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",

@@ -10,7 +10,7 @@ import Botao from '../componentes/Botao';
 import Campo from '../componentes/Campo';
 import Cartao from '../componentes/Cartao';
 import Chip from '../componentes/Chip';
-import { criarOcorrencia } from '../servicos/api';
+import { criarOcorrencia, mensagemErro } from '../servicos/api';
 import { obterLocalizacao } from '../servicos/localizacao';
 import { cores, espaco, fonte } from '../tema';
 
@@ -53,8 +53,8 @@ export default function NovaOcorrencia() {
       await criarOcorrencia({ tipo, descricao: descricao.trim(), fotoUri, ...pos });
       Alert.alert('Ocorrência registrada', 'Obrigado por avisar o bairro.');
       nav.goBack();
-    } catch {
-      Alert.alert('Não foi possível enviar', 'Verifique sua conexão e tente de novo.');
+    } catch (e) {
+      Alert.alert('Não foi possível enviar', mensagemErro(e));
     } finally {
       setEnviando(false);
     }

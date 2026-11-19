@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import Botao from '../componentes/Botao';
 import Cartao from '../componentes/Cartao';
 import { useAuth } from '../contexto/AuthContext';
@@ -10,6 +11,7 @@ import { cores, espaco, fonte } from '../tema';
 const rotuloPerfil = { morador: 'Morador(a)', idoso: 'Idoso(a)', voluntario: 'Voluntário(a)' };
 
 export default function Perfil() {
+  const nav = useNavigation<any>();
   const { usuario, sair } = useAuth();
   const [notificacoes, setNotificacoes] = useState(true);
   const [fonteGrande, setFonteGrande] = useState(false);
@@ -49,6 +51,8 @@ export default function Perfil() {
         <Linha rotulo="Fonte grande" valor={fonteGrande} aoMudar={setFonteGrande} />
         <Linha rotulo="Alto contraste" valor={altoContraste} aoMudar={setAltoContraste} ultima />
       </Cartao>
+
+      <Botao titulo="Contatos de emergência" variante="secundario" icone="call-outline" onPress={() => nav.navigate('Contatos')} estilo={{ marginTop: espaco.lg }} />
 
       <Botao titulo="Sair da conta" variante="secundario" icone="log-out-outline" onPress={confirmarSaida} estilo={{ marginTop: espaco.lg }} />
     </ScrollView>
