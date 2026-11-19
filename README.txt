@@ -1,34 +1,57 @@
 ALERTABAIRRO - APP (React Native + Expo + TypeScript)
 =====================================================
+Global Solution 2026 - Turma 3SIOA
 
-COMO APLICAR O CODIGO (passo a passo)
--------------------------------------
-1. Crie o projeto Expo com TypeScript (na pasta app/ do repositorio):
+EQUIPE
+------
+[Bruno Willian Neckel dos Santos - RM: 99074]
+[Caroline Costa Carvalho de Andrade - RM: 554657]
+[Guilherme Henrique Aragão - RM: 554629]
+[Luana da Silva Estanislau - RM 556090]
 
-   (o projeto Expo ja esta em app/alertabairro/: entre nela e rode "npm install")
-   cd app
+REPOSITORIOS
+------------
+App (este):   https://github.com/luanaestanislau/GlobalSolution26_App
+API + banco:  https://github.com/bruneckel/alertabairro-api  (Java Spring Boot + Oracle)
 
-2. Instale as dependencias (use "expo install" para pegar versoes compativeis):
+COMO RODAR O APP (modo dados falsos, sem API)
+---------------------------------------------
+Pre-requisitos: Node.js 20 ou superior e o aplicativo Expo Go no celular.
 
-   npx expo install react-native-screens react-native-safe-area-context react-native-maps expo-location expo-image-picker expo-image-manipulator @expo/vector-icons
-   npm install @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs axios
-
-3. Copie para dentro de app/ os arquivos deste pacote:
-   - App.tsx (substitui o do template)
-   - pasta src/ inteira
-
-4. Permissoes (abra app.json e adicione dentro de "expo"):
-
-   "plugins": [
-     ["expo-location", { "locationWhenInUsePermission": "O AlertaBairro usa sua localizacao para registrar ocorrencias e achar abrigos." }],
-     ["expo-image-picker", { "cameraPermission": "O AlertaBairro usa a camera para anexar fotos as ocorrencias." }]
-   ]
-
-5. Rode o app:
-
+   cd app/alertabairro
+   npm install
    npx expo start
 
-   Abra no celular com o app Expo Go (QR code) ou no emulador (tecla a / i).
+Escaneie o QR code com o Expo Go (Android) ou com a Camera (iOS), ou tecle "a" / "i"
+para abrir no emulador. No modo de dados falsos, entre com um e-mail que contenha
+"voluntario" (ex.: voluntario@teste.com) para ver as acoes de voluntario.
+
+COMO RODAR COM A API REAL
+-------------------------
+Ordem: banco + API -> app. Celular e computador na mesma rede Wi-Fi.
+
+1. Suba a API e o banco (repositorio bruneckel/alertabairro-api):
+
+   cp .env.example .env      (preencha JWT_SECRET, com openssl rand -hex 48)
+   docker compose up -d --build
+   curl localhost:8080/actuator/health      -> {"status":"UP"}
+
+   Dados de demonstracao (opcional), senha alertabairro123:
+   maria@alertabairro.demo (morador), joao@alertabairro.demo (idoso),
+   ana@alertabairro.demo (voluntario).
+
+2. Descubra o IP do computador na rede (ipconfig no Windows, ifconfig no Mac/Linux)
+   e rode o app apontando para a API (use o IP, nao "localhost"):
+
+   (bash)        EXPO_PUBLIC_API_URL=http://SEU_IP:8080 npx expo start
+   (PowerShell)  $env:EXPO_PUBLIC_API_URL="http://SEU_IP:8080"; npx expo start
+
+   No emulador Android, o computador e acessado por http://10.0.2.2:8080.
+
+JUSTIFICATIVA DAS TECNOLOGIAS (resumo; versao completa mais abaixo)
+-------------------------------------------------------------------
+React Native + Expo (um codigo para Android e iOS, roda no Expo Go), TypeScript (tipos
+evitam erros de integracao com a API) e axios (HTTP com timeout e token JWT).
 
 MODO DE DADOS (falsos x API real)
 ---------------------------------
@@ -87,7 +110,21 @@ Ajuda, NovoPedido               funcionalidade 3: rede de ajuda e "estou bem";
 Contatos                        servicos de emergencia (190, 192, 193, 199) com botao
                                 Ligar + contatos pessoais salvos no aparelho
                                 (adicionar, ligar, excluir)
-Perfil                          dados do usuario, preferencias e sair
+Perfil                          dados do usuario, acessibilidade (Fonte grande, Alto
+                                contraste) e sair
+
+ACESSIBILIDADE (tela Perfil)
+----------------------------
+- Fonte grande: aumenta todos os textos em 30% (src/tema/index.ts, ESCALA_FONTE_GRANDE).
+- Alto contraste: texto preto sobre fundo branco, bordas pretas e cores de status mais
+  escuras (contraste de pelo menos 7:1).
+- As duas opcoes ficam salvas no aparelho (AsyncStorage) e valem em todas as telas,
+  mesmo depois de fechar o app. Ao trocar, as telas sao refeitas e a navegacao volta
+  para o Perfil, sem perder o login.
+- Como funciona: cores e fonte (src/tema) sao objetos "vivos"; estilos() refaz os estilos
+  quando o tema muda; PreferenciasContext salva a escolha e remonta as telas.
+- Alem disso, o app ja usa botoes e fontes grandes por padrao, area de toque ampla, cores
+  de status acompanhadas de texto (nao so cor) e rotulos de acessibilidade nos controles.
 
 GERENCIAMENTO DE MEMORIA E EFICIENCIA (para a documentacao)
 -----------------------------------------------------------
@@ -116,8 +153,6 @@ JUSTIFICATIVA DAS TECNOLOGIAS
 
 LIMITES CONHECIDOS (deste prototipo)
 ------------------------------------
-- Os botoes "Fonte grande" e "Alto contraste" do Perfil ainda nao alteram o app
-  (apenas guardam o estado local).
 - A rota no mapa e uma linha reta entre voce e o abrigo (nao segue as ruas).
 - O token de login fica so em memoria (ao fechar o app, e preciso entrar de novo).
 - O mapa usa o provedor padrao do react-native-maps; para publicar o app, o Android

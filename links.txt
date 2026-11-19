@@ -7,8 +7,8 @@ https://github.com/luanaestanislau/GlobalSolution26_App
 Repositorio da API + banco (Java Spring Boot + Oracle):
 https://github.com/bruneckel/alertabairro-api
 
-Video de demonstracao do app:
-[COLE AQUI O LINK DO VIDEO]
+Video de técnico do app:
+https://youtu.be/7fNpjafLKl4
 
 Video de apresentacao / pitch:
-[COLE AQUI O LINK DO VIDEO]
+https://youtu.be/67Ra7uD0G2k
