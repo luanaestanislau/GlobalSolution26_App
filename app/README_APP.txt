@@ -5,7 +5,7 @@ COMO APLICAR O CODIGO (passo a passo)
 -------------------------------------
 1. Crie o projeto Expo com TypeScript (na pasta app/ do repositorio):
 
-   npx create-expo-app@latest app --template blank-typescript
+   (o projeto Expo ja esta em app/alertabairro/: entre nela e rode "npm install")
    cd app
 
 2. Instale as dependencias (use "expo install" para pegar versoes compativeis):
@@ -33,22 +33,35 @@ COMO APLICAR O CODIGO (passo a passo)
 MODO DE DADOS (falsos x API real)
 ---------------------------------
 Arquivo: src/servicos/api.ts
-- USE_MOCK = true  -> usa dados falsos (src/servicos/mock.ts). Funciona sem API.
-- USE_MOCK = false -> chama a API Node.js. Ajuste BASE_URL para o IP do computador
-  que roda a API (ex.: http://192.168.0.10:3000). Celular e computador devem estar
-  na mesma rede Wi-Fi.
+- Sem a variavel EXPO_PUBLIC_API_URL -> usa dados falsos (src/servicos/mock.ts).
+- Com a variavel -> chama a API do grupo (repo bruneckel/alertabairro-api). Exemplo:
+    (bash)        EXPO_PUBLIC_API_URL=http://SEU_IP:8080 npx expo start
+    (PowerShell)  $env:EXPO_PUBLIC_API_URL="http://SEU_IP:8080"; npx expo start
+  Celular e computador devem estar na mesma rede Wi-Fi.
+- No modo de dados falsos, entre com um e-mail que contenha "voluntario"
+  (ex.: voluntario@teste.com) para ver as acoes de voluntario.
 
-Rotas esperadas da API (contrato combinado no dia 1):
-  POST  /auth/login           -> { token, usuario }
-  POST  /auth/cadastro        -> { token, usuario }
-  GET   /ocorrencias
-  POST  /ocorrencias
-  PATCH /ocorrencias/:id      -> body { acao: "confirmar" }
-  GET   /abrigos
-  GET   /abrigos/proximo?lat=&lng=
-  GET   /ajuda
-  POST  /ajuda
-  POST  /checkins             -> body { status, latitude, longitude }
+Dependencia extra (contatos de emergencia salvos no aparelho):
+   npx expo install @react-native-async-storage/async-storage
+
+Integracao com a API real:
+- A API devolve { erro: "mensagem" }; o app mostra essa mensagem nos alertas.
+- Token expira em 8h: ao receber 401, o app avisa e volta para o Inicio.
+- Perfil "voluntario": "Assumir atendimento" e "Marcar como resolvida" (Detalhe) e
+  "Entrou 1 / Saiu 1" nas vagas dos abrigos. Os outros perfis recebem 403.
+- Pedidos de ajuda: o app envia a posicao para a API calcular "distancia".
+- Excluir ocorrencia, excluir pedido e marcar pedido como resolvido (aba Historico) usam
+  DELETE /ocorrencias/:id, DELETE /ajuda/:id e PATCH /ajuda/:id {acao:"resolver"}; os botoes
+  aparecem so nos itens com "meu: true" (autor). Exige o banco do repo da API.
+
+Rotas da API usadas pelo app (repo bruneckel/alertabairro-api):
+  POST  /auth/login, POST /auth/cadastro   -> { token, usuario }
+  GET   /ocorrencias, POST /ocorrencias
+  PATCH /ocorrencias/:id      -> { acao: "confirmar" | "atender" | "resolver" }
+  GET   /abrigos, GET /abrigos/proximo?lat=&lng=
+  PATCH /abrigos/:id/vagas    -> { quantidade }  (voluntario)
+  GET   /ajuda?lat=&lng=, POST /ajuda
+  POST  /checkins
 Se a API devolver nomes de campos diferentes, ajuste so em src/servicos/api.ts.
 
 ESTRUTURA
@@ -61,14 +74,19 @@ src/servicos/             api.ts (camada de acesso), mock.ts (dados falsos), loc
 src/contexto/             AuthContext (usuario logado, entrar, cadastrar, sair)
 src/componentes/          Botao, Chip, Campo, Cartao, Etiqueta, BotaoSOS
 src/navegacao/            pilha de entrada + pilha do app + abas inferiores
-src/telas/                10 telas (abaixo)
+src/telas/                11 telas (abaixo)
 
 TELAS
 -----
 Inicio, Login, Cadastro         entrada (nao contam como funcionalidade)
 Mapa, Detalhe, NovaOcorrencia   funcionalidade 1: mapa e ocorrencias
 Abrigos                         funcionalidade 2: abrigos, rota e SOS
-Ajuda, NovoPedido               funcionalidade 3: rede de ajuda e "estou bem"
+Ajuda, NovoPedido               funcionalidade 3: rede de ajuda e "estou bem";
+                                aba Historico (itens marcados como resolvidos) e
+                                botoes "Ja foi resolvido" e "Excluir" nos itens do autor
+Contatos                        servicos de emergencia (190, 192, 193, 199) com botao
+                                Ligar + contatos pessoais salvos no aparelho
+                                (adicionar, ligar, excluir)
 Perfil                          dados do usuario, preferencias e sair
 
 GERENCIAMENTO DE MEMORIA E EFICIENCIA (para a documentacao)
